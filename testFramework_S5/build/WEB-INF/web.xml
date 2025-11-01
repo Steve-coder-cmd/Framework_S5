@@ -10,11 +10,22 @@
         <servlet-class>com.framework.servlet.FrontServlet</servlet-class>
     </servlet>
     
-    <!-- Servlet Mappings -->
+    Servlet Mappings
     <servlet-mapping>
         <servlet-name>FrameworkServlet</servlet-name>
         <url-pattern>/*</url-pattern> <!-- Maps the servlet to /hello URL -->
     </servlet-mapping>
+    
+    <!-- Pages d'accueil par défaut -->
+    <welcome-file-list>
+        <welcome-file>index.html</welcome-file>
+        <welcome-file>index.jsp</welcome-file>
+    </welcome-file-list>
+    
+    <!-- Configuration des sessions -->
+    <session-config>
+        <session-timeout>30</session-timeout>
+    </session-config>
     
 
 </web-app>
