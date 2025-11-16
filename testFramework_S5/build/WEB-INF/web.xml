@@ -5,6 +5,14 @@
              http://java.sun.com/xml/ns/j2ee/web-app_2_4.xsd"
          version="2.4">
 
+    <!-- Description de l'application -->
+    <display-name>Projet Framework</display-name>
+
+    <!-- Listener pour initialiser le framework au démarrage -->
+    <listener>
+        <listener-class>com.framework.util.Scanner</listener-class>
+    </listener>
+
     <servlet>
         <servlet-name>FrameworkServlet</servlet-name>
         <servlet-class>com.framework.servlet.FrontServlet</servlet-class>
