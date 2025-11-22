@@ -1,3 +1,12 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ page import="java.util.List" %>
+
+<%
+    String nom = (String) request.getAttribute("nom");
+    int age = (int) request.getAttribute("age");
+    List<String> departements = (List<String>) request.getAttribute("departements");
+%>
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -10,7 +19,19 @@
     <div class="container">
         <h1>Bienvenue sur la Page d'Accueil</h1>
         <p>Ceci est une page HTML statique pour tester le framework.</p>
-        
+        <p>Nom : <%= name %></p>
+        <p>Age : <%= age %></p>
+
+        <h3>Departements :</h3>
+    <ul>
+        <% if (departements != null) {
+            for(String dept : departements) { %>
+                <li><%= dept %></li>
+            <% }
+        } else { %>
+            <li>Aucun departement</li>
+        <% } %>
+    </ul>
         <div class="links">
             <h2>Liens de test :</h2>
             <ul>
