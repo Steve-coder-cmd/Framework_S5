@@ -8,6 +8,12 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.Map;
+
+import com.framework.models.ModelView;
+import com.framework.util.ControllerInfo;
 
 
 @WebServlet(name = "FrontServlet", urlPatterns = {"/"}, loadOnStartup = 1)
@@ -18,6 +24,10 @@ public class FrontServlet extends HttpServlet {
     @Override
     public void init() {
         defaultDispatcher = getServletContext().getNamedDispatcher("default");
+    }
+
+    private void defaultServe(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        defaultDispatcher.forward(req, resp);
     }
 
     @Override
@@ -33,31 +43,59 @@ public class FrontServlet extends HttpServlet {
     }
     
     @Override
-    protected void service(HttpServletRequest request, HttpServletResponse response) 
-            throws ServletException, IOException {
-        String requestURI = request.getRequestURI();
-        String contextPath = request.getContextPath();
-        
-        String resourcePath = requestURI.substring(contextPath.length());
-        
-        try {
-            java.net.URL resource = getServletContext().getResource(resourcePath);
-            if (resource != null) {
-                RequestDispatcher defaultServlet = getServletContext().getNamedDispatcher("default");
-                if (defaultServlet != null) {
-                    defaultServlet.forward(request, response);
-                    return;
-                }
-            }
-        } catch (Exception e) {
-            throw new ServletException("Erreur lors de la vérification de la ressource: " + resourcePath, e);
+    protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        String path = req.getRequestURI().substring(req.getContextPath().length());
+        if (path.isEmpty()) {
+            path = "/"; // Gérer la racine
         }
-        
-        showFrameworkPage(request, response, resourcePath);
+
+        // Vérifier si c'est une ressource statique
+        boolean resourceExists = getServletContext().getResource(path) != null;
+
+        if (resourceExists) {
+            defaultServe(req, resp);
+        } else {
+            // Pas de ressource statique : vérifier les mappings de controllers
+            @SuppressWarnings("unchecked")
+            Map<String, ControllerInfo> urlMap = (Map<String, ControllerInfo>) getServletContext().getAttribute("urlMap");
+
+            ControllerInfo info = urlMap.get(path);
+            if (info != null) {
+                // Mapping trouvé : afficher infos controller/méthode
+                resp.setContentType("text/plain");
+                PrintWriter out = resp.getWriter();
+                out.println("Controller: " + info.getControllerClass().getName());
+                out.println("Method name: " + info.getMethod().getName());
+
+                // Valeur de retour de la méthode 
+                Method methodURL = info.getMethod();
+                try {
+                    Object controllerNewInstance = info.getControllerClass().getDeclaredConstructor().newInstance();
+                    Object returnObject = methodURL.invoke(controllerNewInstance);
+
+                    // Type de retour String 
+                    if(returnObject instanceof String) {
+                        out.println("Retour de la méthode du controller (String) : " + returnObject);
+
+                    } else if (returnObject instanceof ModelView) {
+                        ModelView mv = (ModelView) returnObject;
+                        out.println("Retour de la méthode du controller (ModelView) : " + mv.toString());
+                    } else {
+                        out.println("Le type de retour de la méthode du controller n'est ni de type ModelView ni String!");
+                    }
+                } catch (InstantiationException | IllegalArgumentException | NoSuchMethodException | SecurityException e) {
+                    System.out.println("Erreur lors de la création de l'instance du controller : " + e.getMessage());
+                } catch (IllegalAccessException | InvocationTargetException e) {
+                    System.out.println("Erreur lors de l'invocation de la méthode ou du controller : " + e.getMessage());
+                }
+            } else {
+                // Ni statique ni mapping : 404 custom
+                showFrameworkPage(req, resp);
+            }
+        }
     }
     
-    private void showFrameworkPage(HttpServletRequest request, HttpServletResponse response, 
-                                 String requestedPath) 
+    private void showFrameworkPage(HttpServletRequest request, HttpServletResponse response) 
             throws IOException {
         
         try (PrintWriter out = response.getWriter()) {
@@ -72,6 +110,7 @@ public class FrontServlet extends HttpServlet {
                 </html>
                 """.formatted(uri);
 
+            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
             response.setContentType("text/html;charset=UTF-8");
             out.println(responseBody);
         }
