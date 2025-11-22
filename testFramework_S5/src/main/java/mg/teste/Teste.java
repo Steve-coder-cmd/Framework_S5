@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import com.framework.annotations.AnnotationController;
 import com.framework.annotations.PathParam;
 import com.framework.models.ModelView;
+import com.framework.annotations.RequestParam;
 
 @AnnotationController(path="/api")
 public class Teste {
@@ -22,6 +23,8 @@ public class Teste {
     public ModelView testPage() {
         ArrayList<String> depts = new ArrayList<>();
         depts.add("INFORMATIQUE");
+        depts.add("MARKETING");
+        depts.add("FINANCES");
         
         ModelView model = new ModelView("index.jsp");  // sans le slash devant !
         model.addData("name", "Koto");
@@ -43,6 +46,30 @@ public class Teste {
     public ModelView getUser(@PathParam("username") String username, String nom, int bibi) {
         ModelView mv = new ModelView("user.jsp");
         mv.addData("username", username);
+        return mv;
+    }
+
+    // Page avec formulaire
+    @HandleURL(value = "/inscription")
+    public ModelView showForm() {
+        return new ModelView("inscription.jsp");
+    }
+
+    // Traitement du formulaire 
+    @HandleURL(value = "/inscription/traiter")
+    public ModelView traiterForm(
+            @RequestParam("nom") String nom,
+            @RequestParam("age") int age,
+            @RequestParam("email") String email,
+            @RequestParam("departement") String dept) {
+
+        ModelView mv = new ModelView("confirm.jsp");
+        mv.addData("nom", nom);
+        mv.addData("age", age);
+        mv.addData("email", email);
+        mv.addData("departement", dept);
+        mv.addData("message", "Inscription reussie !");
+
         return mv;
     }
 }

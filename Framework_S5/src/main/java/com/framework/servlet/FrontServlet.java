@@ -14,7 +14,7 @@ import java.lang.reflect.Parameter;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import com.framework.annotations.PathParam;
+//import com.framework.annotations.PathParam;
 import com.framework.models.ModelView;
 import com.framework.util.ControllerInfo;
 import com.framework.util.PathPattern;
@@ -89,22 +89,34 @@ public class FrontServlet extends HttpServlet {
                     Object[] args = new Object[methodParams.length];
 
                     for (int i = 0; i < methodParams.length; i++) {
-                        Parameter param = methodParams[i];
-                        if (param.isAnnotationPresent(PathParam.class)) {
-                            String name = param.getAnnotation(PathParam.class).value();
+                        var param = methodParams[i];
+                        Object argValue = null;
+
+                        if (param.isAnnotationPresent(com.framework.annotations.PathParam.class)) {
+                            // @PathParam  
+                            String name = param.getAnnotation(com.framework.annotations.PathParam.class).value();
                             String value = pathParams.get(name);
-                            // Conversion basique (String → int si besoin)
-                            if (param.getType() == int.class || param.getType() == Integer.class) {
-                                args[i] = Integer.parseInt(value);
-                            } else if (param.getType() == long.class || param.getType() == Long.class) {
-                                args[i] = Long.parseLong(value);
-                            } else {
-                                args[i] = value;
+
+                            if (value != null) {
+                                argValue = convert(value, param.getType());
                             }
-                        } else {
-                            args[i] = null; // ou gérer @RequestParam plus tard
-                            System.out.println("\n\n\nParamètre non annoté avec @RequestParam dans la méthode du controller.\n\n\n");
+
+                        } else if (param.isAnnotationPresent(com.framework.annotations.RequestParam.class)) {
+                            // @RequestParam
+                            String paramName = param.getAnnotation(com.framework.annotations.RequestParam.class).value();
+                            String value = req.getParameter(paramName);  // <-- vient du formulaire ou query string
+
+                            if (value != null && !value.isEmpty()) {
+                                argValue = convert(value, param.getType());
+                            } else {
+                                // Gérer required + defaultValue plus tard
+                                if (param.getType() == String.class) {
+                                    argValue = "";
+                                }
+                            }
                         }
+
+                        args[i] = argValue;
                     }
 
                     Object returnObject = methodURL.invoke(controllerInstance, args);
@@ -135,9 +147,29 @@ public class FrontServlet extends HttpServlet {
         }
     }
     
+    private Object convert(String value, Class<?> targetType) {
+        if (value == null) return null;
+
+        if (targetType == String.class) {
+            return value;
+        } else if (targetType == int.class || targetType == Integer.class) {
+            return Integer.parseInt(value);
+        } else if (targetType == long.class || targetType == Long.class) {
+            return Long.parseLong(value);
+        } else if (targetType == double.class || targetType == Double.class) {
+            return Double.parseDouble(value);
+        } else if (targetType == boolean.class || targetType == Boolean.class) {
+            return Boolean.parseBoolean(value) || "on".equalsIgnoreCase(value) || "true".equalsIgnoreCase(value);
+        }
+
+        return value; // fallback
+    }
+
     private void processModelView(HttpServletRequest req, HttpServletResponse resp, ModelView mv) throws ServletException, IOException {
-        for (String key : mv.getData().keySet()) {
-            req.setAttribute(key, mv.getData().get(key));
+        if(!mv.getData().isEmpty()){
+            for (String key : mv.getData().keySet()) {
+                req.setAttribute(key, mv.getData().get(key));
+            }
         }
         resp.setContentType("text/html;charset=UTF-8");
         resp.setCharacterEncoding("UTF-8");
