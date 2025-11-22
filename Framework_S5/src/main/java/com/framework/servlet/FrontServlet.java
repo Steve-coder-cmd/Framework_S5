@@ -93,7 +93,7 @@ public class FrontServlet extends HttpServlet {
                         Object argValue = null;
 
                         if (param.isAnnotationPresent(com.framework.annotations.PathParam.class)) {
-                            // @PathParam  
+                            // @PathParam fonctionnant 
                             String name = param.getAnnotation(com.framework.annotations.PathParam.class).value();
                             String value = pathParams.get(name);
 
