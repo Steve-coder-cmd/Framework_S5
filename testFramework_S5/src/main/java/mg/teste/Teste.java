@@ -12,4 +12,9 @@ public class Teste {
 
     @HandleURL("/teste")
     public void about() {}
+
+    @HandleURL("/test")
+    public ModelView testPage() {
+        return new ModelView("index.jsp");
+    }
 }
