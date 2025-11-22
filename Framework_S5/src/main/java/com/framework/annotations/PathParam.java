@@ -8,8 +8,7 @@ import java.lang.annotation.Target;
 
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.METHOD)
-public @interface HandleURL {
-	String value() default "/";
-	
+@Target(ElementType.PARAMETER)
+public @interface PathParam {
+    String value();  
 }

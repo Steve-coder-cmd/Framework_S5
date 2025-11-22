@@ -2,6 +2,7 @@ package com.framework.util;
 
 //import java.io.File;
 import java.io.IOException;
+//import java.lang.ModuleLayer.Controller;
 import java.lang.reflect.Method;
 //import java.util.ArrayList;
 import java.util.HashMap;
@@ -22,7 +23,7 @@ public class Scanner implements ServletContextListener {
     public void contextInitialized(ServletContextEvent sce) {
         ServletContext context = sce.getServletContext();
         Set<Class<?>> allClasses = scanClasses(context);
-        Map<String, ControllerInfo> urlMap = new HashMap<>();
+        Map<PathPattern, ControllerInfo> urlMap = new HashMap<>();
 
         for (Class<?> clazz : allClasses) {
             if (clazz.isAnnotationPresent(AnnotationController.class)) {
@@ -33,13 +34,16 @@ public class Scanner implements ServletContextListener {
                     if (method.isAnnotationPresent(HandleURL.class)) {
                         HandleURL mappingAnno = method.getAnnotation(HandleURL.class);
                         String url = normalizePath(mappingAnno.value());
-                        String fullUrl = basePath + url;
-                        urlMap.put(fullUrl, new ControllerInfo(clazz, method));
+                        String fullUrl = normalizePath(basePath + url);
+
+                        PathPattern pattern = new PathPattern(fullUrl);
+                        ControllerInfo info = new ControllerInfo(clazz, method, fullUrl);
+                        urlMap.put(pattern, info);
                     }
                 }
             }
         }
-
+        
         // Stocker la map dans le contexte pour l'utiliser plus tard
         context.setAttribute("urlMap", urlMap);
     }
