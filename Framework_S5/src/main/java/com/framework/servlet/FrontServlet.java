@@ -10,8 +10,11 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 import java.util.Map;
+import java.util.Map.Entry;
 
+import com.framework.annotations.PathParam;
 import com.framework.models.ModelView;
 import com.framework.util.ControllerInfo;
 import com.framework.util.PathPattern;
@@ -43,7 +46,7 @@ public class FrontServlet extends HttpServlet {
         service(request, response);
     }
     
-     @Override
+    @Override
     protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String path = req.getRequestURI().substring(req.getContextPath().length());
         if (path.isEmpty()) {
@@ -64,7 +67,7 @@ public class FrontServlet extends HttpServlet {
             ControllerInfo info = null;
             Map<String, String> pathParams = null;
 
-            for (Map.Entry<PathPattern, ControllerInfo> entry : urlMap.entrySet()) {
+            for (Entry<PathPattern, ControllerInfo> entry : urlMap.entrySet()) {
                 PathPattern pattern = entry.getKey();
                 if (pattern.matches(path)) {
                     info = entry.getValue();
@@ -82,13 +85,13 @@ public class FrontServlet extends HttpServlet {
                     Object controllerInstance = info.getControllerClass().getDeclaredConstructor().newInstance();
 
                     // Préparer les arguments pour la méthode
-                    var methodParams = methodURL.getParameters();
+                    Parameter[] methodParams = methodURL.getParameters();
                     Object[] args = new Object[methodParams.length];
 
                     for (int i = 0; i < methodParams.length; i++) {
-                        var param = methodParams[i];
-                        if (param.isAnnotationPresent(com.framework.annotations.PathParam.class)) {
-                            String name = param.getAnnotation(com.framework.annotations.PathParam.class).value();
+                        Parameter param = methodParams[i];
+                        if (param.isAnnotationPresent(PathParam.class)) {
+                            String name = param.getAnnotation(PathParam.class).value();
                             String value = pathParams.get(name);
                             // Conversion basique (String → int si besoin)
                             if (param.getType() == int.class || param.getType() == Integer.class) {
@@ -100,6 +103,7 @@ public class FrontServlet extends HttpServlet {
                             }
                         } else {
                             args[i] = null; // ou gérer @RequestParam plus tard
+                            System.out.println("\n\n\nParamètre non annoté avec @RequestParam dans la méthode du controller.\n\n\n");
                         }
                     }
 
